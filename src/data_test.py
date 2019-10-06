@@ -8,16 +8,40 @@
 # flight path.
 import numpy as np
 import math
+import noise
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
-from SynthDataHelper import *
-
 
 P_0 = np.array([0,0,0])
 P_n = np.array([1200,780,500])
+DT  = 0.5
 
-gen  = SynthDataHelper()
-data = gen.gen_fp(P_0, P_n) 
+# Noise Parameters
+NOISE_MAG   = 10.0
+NOISE_SCALE = 50.0
+NOISE_OCTS  = 1
+x_0 = 10.0
+y_0 = 100.0
+z_0 = 200.0
+
+def noise_help(b, i):
+	return noise.pnoise1(b+i*DT/NOISE_SCALE, NOISE_OCTS)*NOISE_MAG
+
+# The number of 'steps' is equal to the distance 
+# between the two points, divided by dt
+MAG   = np.linalg.norm(P_n-P_0)
+STEPS = math.floor(MAG/DT)
+
+# Need the unit vector between the points to fill in the data
+DIR   = (P_n-P_0)/MAG
+
+# Now we fill in data. 
+data = np.zeros((STEPS, 3))
+for i in range(STEPS):
+	data[i] = DIR*i
+	data[i][0] += noise_help(x_0, i)
+	data[i][1] += noise_help(y_0, i)
+	data[i][2] += noise_help(z_0, i)
 
 xs, ys, zs = np.split(data, 3, axis=1)
 
